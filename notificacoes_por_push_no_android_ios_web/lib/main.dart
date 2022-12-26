@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -9,6 +10,10 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  final status = await FirebaseMessaging.instance.requestPermission();
+  print(status.authorizationStatus);
+
   runApp(const MyApp());
 }
 
@@ -48,6 +53,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int _counter = 0;
 
+  String? token;
+
 
   @override
   void initState() {
@@ -57,8 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> initializeFcn() async {
-    final token = await messaging.getToken();
+    token = await messaging.getToken(vapidKey: 'BPVEYAE0PEtOdzoVU7Wsxe_2XURjs-D1zvNwVP_XNtsenKsWLgOwX7mcyeQTOREUpG7mHQbiSa4lmB0aC2Ey8ao');
     print(token);
+
+    setState(() {
+      
+    });
+
+    if(!kIsWeb)  {
+      messaging.subscribeToTopic('teste');
+    }
 
     FirebaseMessaging.onMessage.listen((message) {
       if(message.notification != null) {
@@ -74,6 +89,10 @@ class _MyHomePageState extends State<MyHomePage> {
           backgroundColor: Colors.black12,
           duration: const Duration(seconds: 8),
           leftBarIndicatorColor: Colors.blue[500],
+          onTap: (_) {
+            print('Toque em foreground: ${message.data}');
+            //Navigator.of(context).pushNamed(message.data['route']);
+          },
         ).show(context);
         
       }
@@ -81,6 +100,16 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
+
+    FirebaseMessaging.onMessageOpenedApp.listen((message) { 
+      print('Toque em background: ${message.notification?.title}');
+      //Navigator.of(context).pushNamed(message.data['route']);
+    });
+
+    final RemoteMessage? message = await messaging.getInitialMessage();
+    if(message != null) {
+      print('Toque em terminated: ${message.notification?.title}');
+    }
   }
 
 
@@ -92,36 +121,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
@@ -131,6 +136,8 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
+            if(token != null) 
+              SelectableText(token!),    
           ],
         ),
       ),

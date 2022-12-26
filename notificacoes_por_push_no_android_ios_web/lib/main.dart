@@ -12,6 +12,10 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+Future<void> onBackgroundMessage(RemoteMessage message) async {
+  print(message.data);
+} 
+
 class MyApp extends StatelessWidget {
 
   const MyApp({super.key});
@@ -75,6 +79,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       print('MENSAGEM RECEBIDA!!!! ${message.notification?.title}');
     });
+
+    FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
   }
 
 
